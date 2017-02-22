@@ -1,7 +1,7 @@
 #include "syscall.h"
 #include <string.h>
 
-void DoSystemCall(unsigned int *stack,Parameters *arg)
+void DoSystemCall(unsigned int *stack, Parameters *arg)
 { 
   Descriptors[TaskRunning].SP=stack;
   MoveToSP(&KernelStack[289]);
@@ -79,7 +79,7 @@ void sys_taskcreate(int *ID,void (*task)())
   Descriptors[NumberTaskAdd].Join=0;
   Descriptors[NumberTaskAdd].Time=0;
   Descriptors[NumberTaskAdd].Prio=0;
-  Descriptors[NumberTaskAdd].SP=&Descriptors[NumberTaskAdd].Stack[SizeTaskStack-1];
+  Descriptors[NumberTaskAdd].SP=&Descriptors[NumberTaskAdd].Stack[TaskStackSize-1];
   return;
 }
 
@@ -206,7 +206,7 @@ void sys_getmynumber(int *number)
   *number=Descriptors[TaskRunning].Tid;
 }
 
-void sys_nkread(char *tipo, void *value)// endereço da variavel que recebe o dado solicitado será armazenado em serial_queue[posicao_a_inserir].value
+void sys_nkread(char *tipo, void *value)// endereço da variável que recebe o dado solicitado será armazenado em serial_queue[posicao_a_inserir].value
 {
   serial_fila[posicao_a_inserir] = TaskRunning;
   serial_queue[posicao_a_inserir].tid=TaskRunning;

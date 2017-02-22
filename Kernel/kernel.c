@@ -8,9 +8,10 @@ unsigned short posicao_a_inserir = 0;
 unsigned short posicao_a_att = 0;
 
 TaskDescriptor Descriptors[MaxNumberTask];
-ReadyList ready_queue;
+ReadyList ready_queue;	  // Periodic queue
+ReadyList ap_ready_queue; // Aperiodic queue
 SerialData serial_queue[MaxNumberTask];
-int SchedulerAlgorithm=0;
+int SchedulerAlgorithm=0; // 0 - RR, 1 - RM, 2 - EDF, 3 - BG_RR, 4 - PS_RR
 
 #ifdef SHARED_NUMBER
   int shared[SHARED_NUMBER-1];
@@ -22,7 +23,7 @@ void idletask(void)
   while(1);
 }
 
-/* Estas rotinas sao chamados pelo crt.S. 
-Devem existir, mas ainda nao estao sendo usadas */
+/* Estas rotinas são chamadas pelo crt.S.
+Devem existir, mas ainda não estao sendo usadas */
 void UNDEF_Routine(){}
 void FIQ_Routine(){}

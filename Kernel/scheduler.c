@@ -1,21 +1,34 @@
 #include "scheduler.h"
 
-void InsertReadyList(int id)
+void InsertReadyList(int id, int type)
 {
-  switch(SchedulerAlgorithm)
+  switch(type)
   {
-    case RR:
-      if(ready_queue.queue[ready_queue.head]!=0) //coloca na fila apenas se o começo é diferente do fim
+    case PERIODIC:
+      if(SchedulerAlgorithm == RR || SchedulerAlgorithm == BG_RR || SchedulerAlgorithm == PS_RR)
       {
-    	if(ready_queue.tail<MaxNumberTask-1)
-    		ready_queue.tail++;
-    	else
-    		ready_queue.tail=0;
+        if(ready_queue.queue[ready_queue.head]!=0) //coloca na fila apenas se o começo é diferente do fim
+          {
+          if(ready_queue.tail<MaxNumberTask-1)
+            ready_queue.tail++;
+          else
+            ready_queue.tail=0;
+          }
+        ready_queue.queue[ready_queue.tail]=id;
       }
-      ready_queue.queue[ready_queue.tail]=id;
-      break;
+    break;
+    case APERIODIC:
+      if(ap_ready_queue.queue[ap_ready_queue.head]!=0) //coloca na fila apenas se o começo é diferente do fim
+        {
+        if(ap_ready_queue.tail<MaxNumberTask-1)
+          ap_ready_queue.tail++;
+        else
+          ap_ready_queue.tail=0;
+        }
+      ap_ready_queue.queue[ap_ready_queue.tail]=id;
+    break;
     default:
-      break;
+    break;
   }
 }
 
@@ -31,7 +44,7 @@ void WakeUP()
       if(Descriptors[i].Time <= 0 && Descriptors[i].State == BLOCKED)
       {
         Descriptors[i].State = READY;
-        InsertReadyList(i);
+        InsertReadyList(i, Descriptors[i].Type);
       }
     }
   }
@@ -49,28 +62,28 @@ void Dispatcher(void) //responsavel por realizar o disparo/restauração da tare
       ready_queue.queue[ready_queue.head]=0;
       if(ready_queue.head!=ready_queue.tail)
       {
-	    if(ready_queue.head<MaxNumberTask-1)
-	    	ready_queue.head++;
-	    else
-	    	ready_queue.head=0;
+      if(ready_queue.head<MaxNumberTask-1)
+        ready_queue.head++;
+      else
+        ready_queue.head=0;
       }
       if(Descriptors[TaskRunning].State!=READY)
-	     Dispatcher();
+       Dispatcher();
       else
       {
 #ifdef DEBUG_SYSTEM
-	    TTYout();
+      TTYout();
 #endif
 #ifdef DEBUG_PLOT
-	    TTYplot();
+      TTYplot();
 #endif
 #ifdef SHARED_NUMBER
-	    TTYshared(0);
+      TTYshared(0);
 #endif
-	    T0IR = 1;
-	    VICVectAddr = 0;
-	    Descriptors[TaskRunning].State=RUNNING;
-	    RestoreContext(Descriptors[TaskRunning].SP);
+      T0IR = 1;
+      VICVectAddr = 0;
+      Descriptors[TaskRunning].State=RUNNING;
+      RestoreContext(Descriptors[TaskRunning].SP);
       }
       break;
     case INITIAL:
@@ -78,10 +91,10 @@ void Dispatcher(void) //responsavel por realizar o disparo/restauração da tare
       TTYout();
 #endif
 #ifdef DEBUG_PLOT
-	    TTYplot();
+      TTYplot();
 #endif
 #ifdef SHARED_NUMBER
-	    TTYshared(0);
+      TTYshared(0);
 #endif
 MoveToSP(&KernelStack[299]);
       T0IR = 1;
@@ -94,10 +107,10 @@ MoveToSP(&KernelStack[299]);
       TTYout();
 #endif
 #ifdef DEBUG_PLOT
-	    TTYplot();
+      TTYplot();
 #endif
 #ifdef SHARED_NUMBER
-	    TTYshared(0);
+      TTYshared(0);
 #endif
 //MoveToSP(&KernelStack[299]);
       T0IR = 1;
@@ -115,15 +128,21 @@ void Select(unsigned int *pilha)
   MoveToSP(&KernelStack[289]);
   WakeUP();
   U0getchar();
-  switch (SchedulerAlgorithm)
+  switch(SchedulerAlgorithm)
   {
     case RR:
       if(TaskRunning!=1)
-	      Descriptors[TaskRunning].State=READY;
+        Descriptors[TaskRunning].State=READY;
       if(TaskRunning>1)
-    	  InsertReadyList(TaskRunning);
+        InsertReadyList(TaskRunning, Descriptors[TaskRunning].Type);
       break;
-      default:
+    case BG_RR:
+      // implementar Background aqui
+      break;
+    case PS_RR:
+      // implementar Polling Server aqui
+      break;
+    default:
       break;
   }
   Dispatcher();  

@@ -23,7 +23,7 @@
 */
 #define ClkT 1
 //Define tamanho da pilha de cada tarefa
-#define SizeTaskStack 120
+#define TaskStackSize 120
 //Tamanho da Fila
 #define MaxNumberTask 30
 
@@ -37,7 +37,7 @@ typedef struct
   unsigned short Join;
   unsigned short State;
   void (*EP)();
-  unsigned int Stack[SizeTaskStack];
+  unsigned int Stack[TaskStackSize];
 }TaskDescriptor;
 
 typedef struct 
@@ -72,7 +72,7 @@ typedef struct
    para task. Também  deverá  ser  incluído em sys_nkread a verificação para o novo tipo  de dado possível  de ser
    tratado.  E por  fim, ser incluída  a função  de tratamento  em uart.c para que  se  este  formato  de dado for
    detectado, assim como é feito nos atuais. 
-   	Dúvidas: miguel_cafruni@hotmail.com                                                                        */
+   Dúvidas: miguel_cafruni@hotmail.com                                                                        */
   int tid;
   float *real;//28/02/15float
   char *string;
@@ -84,6 +84,7 @@ extern unsigned int KernelStack[300];
 extern unsigned short TaskRunning;
 extern TaskDescriptor Descriptors[MaxNumberTask];
 extern ReadyList ready_queue;
+extern ReadyList ap_ready_queue;
 extern unsigned int NumberTaskAdd;
 extern int SchedulerAlgorithm;
 extern SerialData serial_queue[MaxNumberTask];
@@ -104,7 +105,7 @@ int main(int argc, char *argv[]);
 void idletask();
 
 
-//Includes necessario para o usuario do usuario
+//Includes necessários para o usuário
 #include <arch/nxp/lpc23xx.h>
 #include "../Kernel/initkernel.h"
 #include "../Placa/interrupt.h"

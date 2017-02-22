@@ -10,10 +10,12 @@ void StartKernel(void)
   RTC_CCR=0x11;
 //  TCPLowLevelInit();
   StartReadyList();
+  if(Scheduler == BG_RR || Scheduler == PS_RR)
+    StartAPReadyList();
   CreateIdleAndMain();
   InitTimer0();
 //  drv_accept(5432);
-  MoveToSP(&Descriptors[1].Stack[SizeTaskStack-1]);
+  MoveToSP(&Descriptors[1].Stack[TaskStackSize-1]);
   IRQTimer0(); //liga o kernel
 }
 
@@ -25,15 +27,17 @@ void CreateIdleAndMain(void)
   Descriptors[0].EP=idletask;
   Descriptors[0].State=INITIAL;
   Descriptors[0].Join=0;
-  Descriptors[0].SP=&Descriptors[0].Stack[SizeTaskStack-1];
+  Descriptors[0].SP=&Descriptors[0].Stack[TaskStackSize-1];
   Descriptors[0].Prio=0;
+  Descriptors[0].Type=PERIODIC;
   /*Criaçao da Main */
   Descriptors[1].Tid=TidMain;
   Descriptors[1].EP=(void(*)())main;
   Descriptors[1].State=INITIAL;
   Descriptors[1].Join=0;
-  Descriptors[1].SP=&Descriptors[1].Stack[SizeTaskStack-1];
+  Descriptors[1].SP=&Descriptors[1].Stack[TaskStackSize-1];
   Descriptors[1].Prio=0;
+  Descriptors[1].Type=PERIODIC;
   TaskRunning=1;
   NumberTaskAdd=1;
 }
@@ -42,15 +46,25 @@ void StartReadyList(void)
 {
   int i;
   for(i=0;i<MaxNumberTask-1;i++)
-	  ready_queue.queue[i]=0;
+    ready_queue.queue[i]=0;
   ready_queue.head=0;
   ready_queue.tail=0;
   return;
 }
 
+void StartAPReadyList(void)
+{
+  int i;
+  for(i=0;i<MaxNumberTask-1;i++)
+    ap_ready_queue.queue[i]=0;
+  ap_ready_queue.head=0;
+  ap_ready_queue.tail=0;
+  return;
+}
+
 void ini_serial_fila(void)
 {
-   int i;
-	for(i=0; i<MaxNumberTask; i++)
-	     serial_fila[i] = 0;
+  int i;
+  for(i=0; i<MaxNumberTask; i++)
+    serial_fila[i] = 0;
 }

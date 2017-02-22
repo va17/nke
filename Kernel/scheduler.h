@@ -10,9 +10,11 @@
 #include <string.h>
 
 enum Scheduler{
-  RR,
-  RM,
-  EDF
+  RR,    // 0
+  RM,    // 1
+  EDF,   // 2
+  BG_RR, // 3
+  PS_RR  // 4
 };
 
 void Select(unsigned int *pilha);
