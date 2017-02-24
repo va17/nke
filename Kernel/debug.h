@@ -12,5 +12,6 @@ void TTYout(void); //executado a cada vez que ocorre uma interupção do relógi
 void TTYstart(void);
 void TTYshared(int id);
 void TTYplot(void);
+void TTYsem(sem_t *semaforo);
 
 #endif

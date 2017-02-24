@@ -5,7 +5,6 @@ void StartKernel(void)
   SaidaLed();
   LCDinit();
   U0init();
-  ini_serial_fila();
   RTC_CCR=0; RTC_CCR=2; RTC_CCR=0;
   RTC_CCR=0x11;
 //  TCPLowLevelInit();
@@ -26,6 +25,7 @@ void CreateIdleAndMain(void)
   Descriptors[0].State=INITIAL;
   Descriptors[0].Join=0;
   Descriptors[0].SP=&Descriptors[0].Stack[SizeTaskStack-1];
+  Descriptors[0].PrioStatic=0;
   Descriptors[0].Prio=0;
   /*Criaçao da Main */
   Descriptors[1].Tid=TidMain;
@@ -33,7 +33,8 @@ void CreateIdleAndMain(void)
   Descriptors[1].State=INITIAL;
   Descriptors[1].Join=0;
   Descriptors[1].SP=&Descriptors[1].Stack[SizeTaskStack-1];
-  Descriptors[1].Prio=0;
+  Descriptors[1].PrioStatic=0;
+  Descriptors[0].Prio=0;
   TaskRunning=1;
   NumberTaskAdd=1;
 }
@@ -46,11 +47,4 @@ void StartReadyList(void)
   ready_queue.head=0;
   ready_queue.tail=0;
   return;
-}
-
-void ini_serial_fila(void)
-{
-   int i;
-	for(i=0; i<MaxNumberTask; i++)
-	     serial_fila[i] = 0;
 }

@@ -140,3 +140,20 @@ void TTYplot(void)
 	}
 }
 #endif
+
+#ifdef DEBUG_SEM
+void TTYsem(sem_t *semaforo)
+{
+  sem_t *aux = semaforo;
+  printk("\nLista do semaforo: \n");
+  while(aux->header != aux->tail)
+  {
+    printk(" %d |",aux->sem_queue[aux->header]);
+    if(aux->header == MaxNumberTask-1)
+      aux->header=0;
+    else
+      aux->header++;
+  }
+  printk(" %d \n",aux->sem_queue[aux->header]);
+}
+#endif

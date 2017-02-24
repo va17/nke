@@ -1,0 +1,14 @@
+tarefa start end
+2 task0 0 2
+3 task1 2 6
+4 task2 6 7
+5 idletask 7 11
+6 task0 11 12
+7 task2 12 22
+8 task1 22 26
+9 idletask 26 32
+10 task1 32 36
+11 idletask 36 37
+12 task2 37 47
+13 task1 47 51
+14 idletask 51 62

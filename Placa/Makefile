@@ -4,7 +4,7 @@ SERIALDEV = /dev/ttyS0
 CLOCKFREQ = 12000
 TARGET  = PaNKE
 #Para Alterar a aplicação mude o primeiro arquivo .c
-CSOURCES = ../Aplicacoes/30nkread.c $(wildcard ../Kernel/*.c) $(wildcard ../Placa/*.c)
+CSOURCES = ../Aplicacoes/2pipeline.c $(wildcard ../Kernel/*.c) $(wildcard ../Placa/*.c)
 ASOURCES = $(wildcard ../Kernel/*.S) $(wildcard ../Placa/*.S)
 #Para Alterar a aplicação mude o primeiro arquivo .h
 HEADERS = $(wildcard ../Kernel/*.h) $(wildcard ../Placa/*.h)

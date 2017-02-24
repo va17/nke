@@ -15,8 +15,6 @@ mov pc,lr
 
 GoTask:
 mov sp,r0
-
-
 msr cpsr,#0x10
 mov pc,r1
 mov pc,lr

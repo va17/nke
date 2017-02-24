@@ -7,12 +7,21 @@
 
 #include "usercall.h"
 
-void taskcreate(int *ID,void (*funcao)()) //parametros armazenados em R0 e R1 na chamada
+void taskcreate(int *ID,void (*funcao)(),unsigned int periodo,unsigned int computacional) //parametros armazenados em R0 e R1 na chamada
 {
   Parameters arg;
   arg.CallNumber=TASKCREATE;
   arg.p0=(unsigned char *)ID;
   arg.p1=(unsigned char *)funcao;
+  arg.p2=(unsigned char *)periodo;
+  arg.p3=(unsigned char *)computacional;
+  CallSWI(0,&arg);
+}
+
+void WaitPeriod(void)
+{
+  Parameters arg;
+  arg.CallNumber=WAITPERIOD;
   CallSWI(0,&arg);
 }
 
@@ -127,7 +136,7 @@ void nkprint(char *fmt,void *number)
   Parameters arg;
   arg.CallNumber=NKPRINT;
   arg.p0=(unsigned char *)fmt;
-  arg.p1=(void *)number; //estava unsigned char * - 12/04/15
+  arg.p1=(unsigned char *)number;
   CallSWI(0,&arg);
 }
 
@@ -139,11 +148,10 @@ void getmynumber(int *number)
   CallSWI(0,&arg);
 }
 
-void nkread(char *tipo, void *value)
-{							 
+void nkread(void *value)
+{
   Parameters arg;
-  arg.CallNumber=NKREAD;  
-  arg.p0=(char *)tipo;// o tipo do dado é informado em arg.p0 28/02/15
-  arg.p1=(void *)value;// endereço da variavel que recebe o dado solicitado será armazenado em arg.p1
+  arg.CallNumber=NKREAD;
+  arg.p0=(unsigned char *)value;
   CallSWI(0,&arg);
 }

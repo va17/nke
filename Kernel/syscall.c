@@ -1,5 +1,4 @@
 #include "syscall.h"
-#include <string.h>
 
 void DoSystemCall(unsigned int *stack,Parameters *arg)
 { 
@@ -11,8 +10,10 @@ void DoSystemCall(unsigned int *stack,Parameters *arg)
   switch(arg->CallNumber)
   {
     case TASKCREATE:
-      sys_taskcreate((int *)arg->p0,(void(*)())arg->p1);
+      sys_taskcreate((int *)arg->p0,(void(*)())arg->p1,(unsigned int)(arg->p2),(unsigned int)(arg->p3));
       break;
+    case WAITPERIOD:
+      sys_waitperiod();
     case SEM_WAIT:
       sys_semwait((sem_t *)arg->p0);
       break;
@@ -61,7 +62,7 @@ void DoSystemCall(unsigned int *stack,Parameters *arg)
        sys_getmynumber((int *)arg->p0);
        break;
     case NKREAD:
-       sys_nkread((char *)arg->p0,(void *)arg->p1);// 28/02/2015
+       sys_nkread((void *)arg->p0);
        break;
     default:
        break;
@@ -69,7 +70,7 @@ void DoSystemCall(unsigned int *stack,Parameters *arg)
   RestoreContext(Descriptors[TaskRunning].SP);
 }
 
-void sys_taskcreate(int *ID,void (*task)())
+void sys_taskcreate(int *ID,void (*task)(),unsigned int Periodo,unsigned int Computacional)
 {
   NumberTaskAdd++;
   *ID=NumberTaskAdd;
@@ -78,33 +79,71 @@ void sys_taskcreate(int *ID,void (*task)())
   Descriptors[NumberTaskAdd].State=INITIAL;
   Descriptors[NumberTaskAdd].Join=0;
   Descriptors[NumberTaskAdd].Time=0;
+  Descriptors[NumberTaskAdd].PrioStatic=0;
   Descriptors[NumberTaskAdd].Prio=0;
+  Descriptors[NumberTaskAdd].TimeComputational=Computacional/ClkT;
+  Descriptors[NumberTaskAdd].TimeComputationalCounter=Computacional/ClkT;
+  Descriptors[NumberTaskAdd].TimePeriodCounter=Descriptors[NumberTaskAdd].TimePeriod=Periodo/ClkT;
   Descriptors[NumberTaskAdd].SP=&Descriptors[NumberTaskAdd].Stack[SizeTaskStack-1];
   return;
 }
 
+void sys_waitperiod(void) //Atualizado
+{
+  Descriptors[TaskRunning].TimeComputationalCounter = 0;
+  Descriptors[TaskRunning].TimePeriodCounter = Descriptors[TaskRunning].TimePeriod; 
+  Descriptors[TaskRunning].State=BLOCKED;
+  //printk("Descriptors[TaskRunning].TimePeriodCounter: ", Descriptors[TaskRunning].TimePeriodCounter);
+  Dispatcher();
+}
 void sys_semwait(sem_t *semaphore)
 {
-    semaphore->count--;
-    if(semaphore->count < 0)
+    if(semaphore->count > 0) 			//semaforo aberto?
     {
+      semaphore->count = 0;			//bloqueia semaforo
+      semaphore->task_id = TaskRunning;
+    }else{
+      if(Descriptors[TaskRunning].Tid != semaphore->task_id) {
+	    semaphore->blocked_number++;
 	    semaphore->sem_queue[semaphore->tail] = TaskRunning;
 	    Descriptors[TaskRunning].State = BLOCKED ;
 	    semaphore->tail++;
-	    if(semaphore->tail == MaxNumberTask-1) semaphore->tail = 0;
-	      Dispatcher();
+	    if(semaphore->tail == MaxNumberTask-1) 
+	      semaphore->tail = 0;
+	    ordena_sem_queue(semaphore);
+	    if(Descriptors[semaphore->task_id].Prio > Descriptors[TaskRunning].Prio)
+	      Descriptors[semaphore->task_id].Prio = Descriptors[TaskRunning].Prio;
+	    Dispatcher();
+      }
     }
+#ifdef DEBUG_SEM
+      TTYsem(semaphore);
+#endif
 }
 
 void sys_sempost(sem_t *semaphore)
 {
-    semaphore->count++;
-    if(semaphore->count <= 0)
+
+    if(semaphore->blocked_number == 0)
     {
+      semaphore->count=1;
+      Descriptors[semaphore->task_id].Prio = Descriptors[semaphore->task_id].PrioStatic;
+    }else{
+      semaphore->blocked_number--;
       Descriptors[semaphore->sem_queue[semaphore->header]].State = READY;
+      //restaura prio da task que sai do semaforo
+      Descriptors[semaphore->task_id].Prio = Descriptors[semaphore->task_id].PrioStatic; 	
+      //recebe nova task no semaforo
+      semaphore->task_id = semaphore->sem_queue[semaphore->header];			
       InsertReadyList(semaphore->sem_queue[semaphore->header]);
-      semaphore->header++;
-      if(semaphore->header == MaxNumberTask-1) semaphore->header = 0;
+      semaphore->sem_queue[semaphore->header] = 0;
+      if(semaphore->header != semaphore->tail)
+      {
+	if(semaphore->header == MaxNumberTask-1)
+	  semaphore->header = 0;
+	else
+	  semaphore->header++;
+      }
     }
 }
 
@@ -113,6 +152,8 @@ void sys_seminit(sem_t *semaphore, int value)
     semaphore->count = value;
     semaphore->header = 0;
     semaphore->tail = 0;
+    semaphore->task_id = 99;
+    semaphore->blocked_number = 0;
 }
 
 void sys_taskexit(void)
@@ -168,14 +209,38 @@ void sys_ligaled(int value)
 
 void sys_start(int scheduler)
 {
-  int i=2;
+  int i=2,k=0;
+  int prioridade_inserida=NumberTaskAdd-1;
+  float maior=0;
   SchedulerAlgorithm=scheduler;
   Descriptors[1].State=BLOCKED;
   switch (SchedulerAlgorithm)
   {
     case RR:
+    case EDF:
       for(i=2;i<=NumberTaskAdd;i++)
 	     InsertReadyList(i);
+      break;
+    case RM:
+      for(i=2;i<=NumberTaskAdd;i++)
+      {
+	    if(Descriptors[i].TimePeriod>=maior && Descriptors[i].Prio==0)
+	    {
+	      k=i;
+	      maior=Descriptors[i].TimePeriod;
+	    }
+	    if(i==NumberTaskAdd)
+	    {
+	    	  InsertReadyList(k);
+	    	  Descriptors[k].Prio = prioridade_inserida--;
+			  Descriptors[k].PrioStatic = Descriptors[k].Prio;
+	    	  if(prioridade_inserida > 0)
+	    	  {
+				maior=0;
+				i=1;
+	    	  }
+	    }
+      }
       break;
     default:
       break;
@@ -206,34 +271,12 @@ void sys_getmynumber(int *number)
   *number=Descriptors[TaskRunning].Tid;
 }
 
-void sys_nkread(char *tipo, void *value)// endereço da variavel que recebe o dado solicitado será armazenado em serial_queue[posicao_a_inserir].value
+void sys_nkread(void *value)
 {
-  serial_fila[posicao_a_inserir] = TaskRunning;
-  serial_queue[posicao_a_inserir].tid=TaskRunning;
-	     if(!strcmp(tipo,"%f"))//28/02/15 
-	   serial_queue[posicao_a_inserir].real=(void *)value;// value é o endereço da variável que recebe o dado solicitado na app
-	else if(!strcmp(tipo,"%.1f"))
-        serial_queue[posicao_a_inserir].real=(void *)value;
-	else if(!strcmp(tipo,"%.2f"))
-        serial_queue[posicao_a_inserir].real=(void *)value;
-	else if(!strcmp(tipo,"%.3f"))
-        serial_queue[posicao_a_inserir].real=(void *)value;
-	else if(!strcmp(tipo,"%.4f"))
-        serial_queue[posicao_a_inserir].real=(void *)value;
-	else if(!strcmp(tipo,"%.5f"))
-        serial_queue[posicao_a_inserir].real=(void *)value;
-	else if(!strcmp(tipo,"%.6f"))
-        serial_queue[posicao_a_inserir].real=(void *)value;
-	else if(!strcmp(tipo,"%s"))
-        serial_queue[posicao_a_inserir].string=(void *)value;
-	else if(!strcmp(tipo,"%c"))//07/03/2015
-        serial_queue[posicao_a_inserir].caracter=(void *)value;
-	else if(!strcmp(tipo,"%d"))
-        serial_queue[posicao_a_inserir].inteiro=(void *)value;
+  /*	
+  serial_queue.tid=TaskRunning;
+  serial_queue.value=(int *)value;
   Descriptors[TaskRunning].State=BLOCKED;
-  printk("task %d está bloqueada aguardando dado\n",TaskRunning);
-  posicao_a_inserir++;  	
-  if(posicao_a_inserir == MaxNumberTask) posicao_a_inserir = 0;
-    printk("[posicao_a_inserir] = %d \n", posicao_a_inserir);
   Dispatcher();
+  */
 }

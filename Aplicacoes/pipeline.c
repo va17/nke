@@ -1,57 +1,48 @@
-
 #include "../Kernel/kernel.h"
-
-sem_t s0,s1,s2;
-int num=0;
-
+int aux=0;
+sem_t s1,s2,s3;
 void task0()
 {
     int i;
-    for(i=0;i<10;i++)
-    {
-       semwait(&s0);
-       num++;
-       nkprint("num = %d\n",num);
-       sempost(&s1);
+    for(i=0;i<1000;i++){
+      semwait(&s1);
+	  aux+=2;
+      sempost(&s1); 
     }
+      sempost(&s2); 
     taskexit();
 }
 
 void task1()
 {
     int i;
-    for(i=0;i<10;i++)
-    {
-       semwait(&s1);
-       num++;
-       nkprint("num = %d\n",num);
-       sempost(&s2);
+    for(i=0;i<1000;i++){
+      semwait(&s1);
+	aux+=3;
+      sempost(&s1); 
     }
+      sempost(&s3); 
     taskexit();
-}
+} 
 
 void task2()
 {
-    int i;
-    for(i=0;i<10;i++)
-    {
-       semwait(&s2);
-       num++;
-       nkprint("num = %d\n",num);
-       sempost(&s0);
-    }
-    taskexit();
+    semwait(&s2); 
+    semwait(&s3); 
+    nkprint("%d ",aux);
+    taskexit();   
 }
 
 int main(int argc, char *argv[])
 {
-  int t2,t3,t4;
-  seminit(&s0, 1);
-  seminit(&s1, 0);
-  seminit(&s2, 0);
-  taskcreate(&t2,task0);
-  taskcreate(&t3,task1);
-  taskcreate(&t4,task2);
-  start(RR);
+  int t4,t2,t3,t5, t6, t7, t8, t9, t10, t11;
+  seminit(&s1,5);
+  seminit(&s2,-10);
+  seminit(&s3,0);
+  taskcreate(&t2,task0, 10, 2);
+  taskcreate(&t3,task1, 15, 4);
+  taskcreate(&t4,task2, 25, 10);
+  
+start(RM);
   return 0;
 }

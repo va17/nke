@@ -4,7 +4,8 @@
 
 #include "syscall.h"
 
-void taskcreate(int *ID,void (*funcao)());
+void taskcreate(int *ID,void (*funcao)(),unsigned int Periodo,unsigned int Computacional);
+void waitperiod(void);
 void semwait(sem_t *semaforo);
 void sempost(sem_t *semaforo);
 void seminit(sem_t *semaforo, int ValorInicial);
@@ -20,6 +21,6 @@ void taskjoin(int identificador);
 void setmyname(const char *name);
 void nkprint(char *fmt,void *number);
 void getmynumber(int *number);
-void nkread(char *tipo,void *value);
+void nkread(void *value);
 
 #endif /* USERCALL_H_ */

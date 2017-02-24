@@ -8,8 +8,6 @@
 
 void StartKernel(void);
 void StartReadyList(void);
-void ini_serial_fila(void);
 void CreateIdleAndMain(void);
-
 
 #endif

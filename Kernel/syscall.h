@@ -8,6 +8,7 @@
 
 enum sys_temCall{
   TASKCREATE,
+  WAITPERIOD,
   SEM_WAIT,
   SEM_POST,
   SEM_INIT,
@@ -35,7 +36,8 @@ enum TaskEstados{
 };
 
 void DoSystemCall(unsigned int *stack,Parameters *arg);
-void sys_taskcreate(int *ID,void (*task)());
+void sys_taskcreate(int *ID,void (*funcao)(),unsigned int Periodo,unsigned int Computacional);
+void sys_waitperiod(void);
 void sys_semwait(sem_t *semaphore);
 void sys_sempost(sem_t *semaphore);
 void sys_seminit(sem_t *semaphore, int value);
@@ -47,8 +49,7 @@ void sys_ligaled(int value);
 void sys_start(int scheduler);
 void sys_taskjoin(int id);
 void sys_setmyname(const char *name);
-void sys_nkprint(char *fmt,void *number);
 void sys_getmynumber(int *number);
-void sys_nkread(char *tipo,void *value);
+void sys_nkread(void *value);
 
 #endif
